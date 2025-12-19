@@ -1,3 +1,4 @@
+# autoconf and build artifacts
 *.tar.gz
 /aclocal.m4
 /ar-lib
@@ -49,3 +50,6 @@ pkcs11.txt
 cert9.db
 key4.db
  
+# VSCode
+/.vscode/
+
