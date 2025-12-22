@@ -61,6 +61,7 @@ extern "C" {
 	OBJ_T,
 	KEY_T,
 	CRT_T,
+	HWF_T,
 	MEC_T,
 	MGF_T,
 	USR_T,
