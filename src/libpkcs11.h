@@ -27,6 +27,35 @@
 
 #ifndef __LIBPKCS11_H
 #define __LIBPKCS11_H
-void *C_LoadModule(const char *name, CK_FUNCTION_LIST_PTR_PTR);
-CK_RV C_UnloadModule(void *module);
-#endif
+
+#include "cryptoki.h"
+
+typedef enum {
+    PKCS11_VERSION_ILLEGAL = -1,
+    PKCS11_VERSION_2_0 = 0,
+    PKCS11_VERSION_3_0 = 1,
+    PKCS11_VERSION_3_2 = 2,
+} pkcs11_version_t;
+
+
+/* since all function tables start with a CK_VERSION, */
+/* we add it explicitly here so to map and access the version information */
+/* directly without having to cast to a specific function table version */
+
+typedef union {
+    CK_VERSION version;
+    CK_FUNCTION_LIST v2;
+    CK_FUNCTION_LIST_3_0 v3_0;
+    CK_FUNCTION_LIST_3_2 v3_2;
+} pkcs11_function_list_t;
+
+typedef pkcs11_function_list_t *pkcs11_function_list_t_ptr;
+
+typedef struct sc_pkcs11_module sc_pkcs11_module_t;	// opaque module handle
+
+
+sc_pkcs11_module_t* C_LoadModule(const char *name, pkcs11_function_list_t_ptr *funcs);
+pkcs11_version_t C_GetModuleVersion(sc_pkcs11_module_t *module);
+CK_RV C_UnloadModule(sc_pkcs11_module_t *module);
+
+#endif /* __LIBPKCS11_H */
