@@ -40,21 +40,22 @@ AC_SUBST([$1], ['$2'])
 ])
 
 define(VERSION_MAJOR,1)
-define(VERSION_MINOR,9)
+define(VERSION_MINOR,10)
 define(VERSION_FIX,0)
 
 # Following rules at http://web.mit.edu/gnu/doc/html/libtool.html#SEC36
 #
 #    Start with version information of `0:0:0' for each libtool library.
 #    Update the version information only immediately before a public release of your software. More frequent updates are unnecessary, and only guarantee that the current interface number gets larger faster.
+#    Age must be less than or equal to the current interface number.
 #    If the library source code has changed at all since the last update, then increment revision (`c:r:a' becomes `c:r+1:a').
 #    If any interfaces have been added, removed, or changed since the last update, increment current, and set revision to 0.
 #    If any interfaces have been added since the last public release, then increment age.
 #    If any interfaces have been removed since the last public release, then set age to 0.
 
-define(ABI_CUR,0)
-define(ABI_REV,13)
-define(ABI_AGE,0)
+define(ABI_CUR,1)
+define(ABI_REV,14)
+define(ABI_AGE,1)
 
 
 AC_INIT([libp11shim],[VERSION_MAJOR.VERSION_MINOR.VERSION_FIX],[eric.devolder@mastercard.com])
@@ -74,9 +75,9 @@ AC_PROG_CC
 
 # Check if C (gnu11) flavour is supported
 # this is needed for atomics, and for localtime_r() (which is not present on std=c11)
-AX_CHECK_COMPILE_FLAG([-std=gnu11],
-  [ CFLAGS+=" -std=gnu11"],
-  [ AC_MSG_ERROR([gnu11 flavour of C language not supported.]) ])
+AX_CHECK_COMPILE_FLAG([-std=gnu17],
+  [ CFLAGS+=" -std=gnu17"],
+  [ AC_MSG_ERROR([gnu17 flavour of C language not supported.]) ])
 
 # Checks if the compiler provides stdatomic.h
 AC_CHECK_HEADER([stdatomic.h],,[AC_MSG_ERROR(["stdatomic.h" not found with this compiler, needed to build this code. Consider using a more recent compiler.])])
@@ -104,14 +105,14 @@ PKG_PROG_PKG_CONFIG
 
 AS_IF([test "$enable_openssl" != no],
     [PKG_CHECK_MODULES([LIBCRYPTO],
-        [libcrypto11 >= 1.1.1],
+	[libcrypto11 >= 1.1.1],
 	[enable_openssl=yes],
 	[ AC_MSG_WARN([libcrypto11 not found with pkg-config, trying with libcrypto])
-	  PKG_CHECK_MODULES([LIBCRYPTO], 
-              [libcrypto >= 1.1.1], 
+	  PKG_CHECK_MODULES([LIBCRYPTO],
+	      [libcrypto >= 1.1.1],
 	      [enable_openssl=yes],
 	      [AC_MSG_WARN([Could not find a suitable OpenSSL library. Dropping dependencies, no support for printing certificate attributes.])
-                enable_openssl=no] ) ] ) ] )
+		enable_openssl=no] ) ] ) ] )
 
 AM_CONDITIONAL([ENABLE_OPENSSL], [test "$enable_openssl" = "yes"])
 AS_IF([test "$enable_openssl" = "yes" ],
