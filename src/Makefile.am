@@ -24,25 +24,38 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/include/cryptoki/published
 
 MAINTAINERCLEANFILES = Makefile.in
 
-lib_LTLIBRARIES = libpkcs11shim.la
+lib_LTLIBRARIES = libpkcs11shim.la libpkcs11shim3.la
 
-libpkcs11shim_la_SOURCES = 	pkcs11-shim.c \
+LIB_COMMONSRC = pkcs11-shim.c \
 				pkcs11-display.c pkcs11-display.h \
 				libpkcs11.c libpkcs11.h \
 				libscdl.c libscdl.h \
 				deferred-printf.c deferred-printf.h \
 				threadqueue.c threadqueue.h \
 				shim-config.c shim-config.h \
-				atfork.c atfork.h \
-				pkcs11.exports
+				atfork.c atfork.h
 
+libpkcs11shim_la_SOURCES = 	 $(LIB_COMMONSRC) pkcs11-v2.exports
+
+libpkcs11shim_la_CFLAGS = -DEXPOSE_PKCS11_V2_ONLY
 libpkcs11shim_la_LDFLAGS = $(AM_LDFLAGS) \
-	-export-symbols "$(srcdir)/pkcs11.exports" \
+	-export-symbols "$(srcdir)/pkcs11-v2.exports" \
+	-module -shared -no-undefined \
+	-version-info @LIBSHIM_CUR@:@LIBSHIM_REV@:@LIBSHIM_AGE@
+
+# PKCS11 v3+ exposes more API endpoints than v2
+libpkcs11shim3_la_SOURCES = 	 $(LIB_COMMONSRC) pkcs11-v3.exports
+libpkcs11shim3_la_CFLAGS =
+
+libpkcs11shim3_la_LDFLAGS = $(AM_LDFLAGS) \
+	-export-symbols "$(srcdir)/pkcs11-v3.exports" \
 	-module -shared -no-undefined \
 	-version-info @LIBSHIM_CUR@:@LIBSHIM_REV@:@LIBSHIM_AGE@
 
 if ENABLE_OPENSSL
-libpkcs11shim_la_CFLAGS = $(LIBCRYPTO_CFLAGS)
+libpkcs11shim_la_CFLAGS += $(LIBCRYPTO_CFLAGS)
 libpkcs11shim_la_LIBADD = $(LIBCRYPTO_LIBS)
+libpkcs11shim3_la_CFLAGS += $(LIBCRYPTO_CFLAGS)
+libpkcs11shim3_la_LIBADD = $(LIBCRYPTO_LIBS)
 endif
 

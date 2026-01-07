@@ -1276,16 +1276,14 @@ const char *lookup_enum(ck_type type, CK_ULONG value)
 }
 
 
-void
-show_error( FILE *f, char *str, CK_RV rc )
+void show_error( FILE *f, char *str, CK_RV rc )
 {
     deferred_fprintf(f, "      %s returned:  %ld %s", str, (unsigned long) rc, lookup_enum ( RV_T, rc ));
     deferred_fprintf(f, "\n");
 }
 
 
-void
-print_ck_info(FILE *f, CK_INFO *info)
+void print_ck_info(FILE *f, CK_INFO *info)
 {
     deferred_fprintf(f, "      cryptokiVersion:         %d.%d\n",    info->cryptokiVersion.major, info->cryptokiVersion.minor );
     deferred_fprintf(f, "      manufacturerID:         '%32.32s'\n",  info->manufacturerID );
@@ -1295,8 +1293,7 @@ print_ck_info(FILE *f, CK_INFO *info)
 }
 
 
-void
-print_slot_list(FILE *f, CK_SLOT_ID_PTR pSlotList, CK_ULONG ulCount)
+void print_slot_list(FILE *f, CK_SLOT_ID_PTR pSlotList, CK_ULONG ulCount)
 {
     CK_ULONG i;
 
@@ -1310,8 +1307,7 @@ print_slot_list(FILE *f, CK_SLOT_ID_PTR pSlotList, CK_ULONG ulCount)
 }
 
 
-void
-print_slot_info(FILE *f, CK_SLOT_INFO *info)
+void print_slot_info(FILE *f, CK_SLOT_INFO *info)
 {
     size_t i;
     enum_specs ck_flags[] = {
@@ -1333,8 +1329,7 @@ print_slot_info(FILE *f, CK_SLOT_INFO *info)
 }
 
 
-void
-print_token_info(FILE *f, CK_TOKEN_INFO *info)
+void print_token_info(FILE *f, CK_TOKEN_INFO *info)
 {
     size_t            i;
     enum_specs ck_flags[] = {
@@ -1479,8 +1474,7 @@ print_attribute_list(FILE *f, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG  ulCount)
 }
 
 
-void
-print_attribute_list_req(FILE *f, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG  ulCount)
+void print_attribute_list_req(FILE *f, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG  ulCount)
 {
     CK_ULONG j, k;
     int found;
@@ -1504,8 +1498,7 @@ print_attribute_list_req(FILE *f, CK_ATTRIBUTE_PTR pTemplate, CK_ULONG  ulCount)
 }
 
 
-void
-print_session_info(FILE *f, CK_SESSION_INFO *info)
+void print_session_info(FILE *f, CK_SESSION_INFO *info)
 {
     size_t i;
     enum_specs ck_flags[] = {
@@ -1523,4 +1516,37 @@ print_session_info(FILE *f, CK_SESSION_INFO *info)
 	    deferred_fprintf(f, "        %s\n", ck_flags[i].name);
     }
     deferred_fprintf(f, "      ulDeviceError:           %0lx\n",     info->ulDeviceError );
+}
+
+void print_interface_list(FILE *f, CK_INTERFACE_PTR pInterfaceList, CK_ULONG ulCount)
+{
+    CK_ULONG i;
+
+    if(pInterfaceList) {
+        for (i = 0; i < ulCount; i++) {
+            deferred_fprintf(f, "    Interface %ld:\n", i);
+            print_interface(f, &pInterfaceList[i]);
+        }
+    }
+    else {
+        deferred_fprintf(f, "      Count is %ld\n", ulCount);
+    }
+}
+
+void print_interface(FILE *f, CK_INTERFACE_PTR interface)
+{
+    size_t i;
+    enum_specs ck_flags[] = {
+        { CKF_INTERFACE_FORK_SAFE, "CKF_INTERFACE_FORK_SAFE           " },
+    };
+
+    deferred_fprintf(f, "      interface Name:          '%s'\n",  interface->pInterfaceName);
+    deferred_fprintf(f, "      interface Version:       %d.%d\n", 
+        ((CK_FUNCTION_LIST_PTR)(interface->pFunctionList))->version.major, 
+        ((CK_FUNCTION_LIST_PTR)(interface->pFunctionList))->version.minor );
+
+    for(i = 0; i < sizeof (ck_flags) / sizeof (*ck_flags); i++) {
+        if(interface->flags & ck_flags[i].type)
+            deferred_fprintf(f, "        %s\n", ck_flags[i].name);
+    }
 }

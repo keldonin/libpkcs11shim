@@ -74,18 +74,15 @@ static void init_shim(void);
 // pkcs11_version_t defined in libpkcs11.h
 // pkcs11_function_list_t defined in libpkcs11.h
 
-typedef struct {
-    pkcs11_version_t version;
-    pkcs11_function_list_t table;
-} pkcs11_interface_t;
-
-typedef pkcs11_interface_t *pkcs11_interface_t_ptr;
 
 
-/* Shim Module Function List */
-static pkcs11_interface_t_ptr pkcs11_shim = NULL;
-/* Real Module Function List */
+
+/* Shim Module Function List, the one we expose */
+static pkcs11_function_list_t_ptr pkcs11_shim = NULL;
+
+/* Real Module Function List, the one we load */
 static pkcs11_function_list_t_ptr po = NULL;
+
 /* Dynamic Module Handle */
 static void *modhandle = NULL;
 
@@ -279,7 +276,7 @@ CK_RV C_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList)
     struct timeval t;
 
     enter("C_GetFunctionList", &t);
-    *ppFunctionList = &pkcs11_shim->table.v2;
+    *ppFunctionList = &pkcs11_shim->v2;
     return retne(CKR_OK, &t);
 }
 
@@ -415,7 +412,7 @@ shim_C_GetMechanismList(CK_SLOT_ID slotID, CK_MECHANISM_TYPE_PTR pMechanismList,
     rv = po->v2.C_GetMechanismList(slotID, pMechanismList, pulCount);
     if (rv == CKR_OK)
     {
-        shim_dump_array_out("pMechanismList", *pulCount);
+        shim_dump_array_out("pMechanismList", *pulCount );
         print_mech_list(shim_config_output(), pMechanismList, *pulCount);
     }
     return retne(rv, &t);
@@ -1723,7 +1720,7 @@ shim_C_WaitForSlotEvent(CK_FLAGS flags, CK_SLOT_ID_PTR pSlot, CK_VOID_PTR pRserv
 /* PKCS11 v3 functions*/
 
 CK_RV
-C_GetInterfaceList(CK_INTERFACE_PTR pInterfacesList, CK_ULONG_PTR pulCount)
+C_GetInterfaceList(CK_INTERFACE_PTR pInterfaceList, CK_ULONG_PTR pulCount)
 {
     CK_RV rv;
     struct timeval t;
@@ -1737,10 +1734,17 @@ C_GetInterfaceList(CK_INTERFACE_PTR pInterfacesList, CK_ULONG_PTR pulCount)
     }
 
     enter("C_GetInterfaceList", &t);
-    shim_dump_ptr_out("pInterfacesList", pInterfacesList);
-    rv = po->v3_0.C_GetInterfaceList(pInterfacesList, pulCount);
-    if (rv == CKR_OK && pulCount)
-        shim_dump_ulong_out("*pulCount", *pulCount);
+    shim_dump_ptr_in("pInterfaceList", pInterfaceList);
+    shim_dump_ptr_in("pulCount", pulCount);
+
+    rv = po->v3_0.C_GetInterfaceList(pInterfaceList, pulCount);
+
+    if (rv == CKR_OK && pulCount) {
+        shim_dump_array_out("pInterfaceList", *pulCount);
+        print_interface_list(shim_config_output(), pInterfaceList, *pulCount);
+    } else {
+        shim_dump_ptr_out("pInterfaceList", pInterfaceList);
+    }
     return retne(rv, &t);
 }
 
@@ -1761,13 +1765,21 @@ C_GetInterface(CK_UTF8CHAR_PTR pInterfaceName, CK_VERSION_PTR pVersion,
 
     enter("C_GetInterface", &t);
     shim_dump_ptr_in("pInterfaceName", pInterfaceName);
-    if (pVersion)
+    shim_dump_ptr_in("pVersion", pVersion);    
+    if (pVersion) {
         deferred_fprintf(shim_config_output(), "[in ] pVersion = %u.%u\n", pVersion->major, pVersion->minor);
-    shim_dump_ptr_out("ppInterface", ppInterface);
+    }
+
+    shim_dump_ptr_in("ppInterface", ppInterface);
     shim_dump_ulong_in("flags", flags);
+
     rv = po->v3_0.C_GetInterface(pInterfaceName, pVersion, ppInterface, flags);
-    if (rv == CKR_OK && ppInterface)
-        shim_dump_ptr_out("*ppInterface", *ppInterface);
+    if (rv == CKR_OK && ppInterface) {
+        shim_dump_desc_out("ppInterface");
+        print_interface(shim_config_output(), *ppInterface);
+    } else {
+        shim_dump_ptr_out("ppInterface", ppInterface);
+    }
     return retne(rv, &t);
 }
 
@@ -2375,12 +2387,11 @@ static void init_shim(void)
 
     /* Allocates the pkcs11_shim structure */
     /* cleanup not required - initializer will take care of that*/
-    pkcs11_shim = malloc(sizeof(pkcs11_interface_t));
+    pkcs11_shim = malloc(sizeof(pkcs11_function_list_t));
     if (pkcs11_shim)
     {
-        *pkcs11_shim = (pkcs11_interface_t) {
-            .version = PKCS11_VERSION_3_2,
-            .table.v3_2 = {
+        *pkcs11_shim = (pkcs11_function_list_t) {
+            .v3_2 = {
                 .version = {.major = 3, .minor = 2},
                 .C_Initialize              = shim_C_Initialize,
                 .C_Finalize                = shim_C_Finalize,
@@ -2514,17 +2525,14 @@ static void init_shim(void)
     {
         if(po->version.major == 3 && po->version.minor >= 2)
         {
-            pkcs11_shim->version = PKCS11_VERSION_3_2;
             fprintf(shim_config_output(), "PKCS11 v3.2 interface loaded\n");
         }
         else if(po->version.major == 3 && po->version.minor == 0)
         {
-            pkcs11_shim->version = PKCS11_VERSION_3_0;
             fprintf(shim_config_output(), "PKCS11 v3.0 interface loaded\n");
         }
         else if(po->version.major == 2 )
         {
-            pkcs11_shim->version = PKCS11_VERSION_2_0;
             fprintf(shim_config_output(), "PKCS11 v2 interface loaded\n");
         }
         else

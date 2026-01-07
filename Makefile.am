@@ -28,6 +28,3 @@ EXTRA_DIST = 	include/cryptoki.h \
 		include/cryptoki/published/ \
 		README.md \
 		CHANGELOG.md
-
-install-exec-hook:
-	chmod 644 $(DESTDIR)$(libdir)/libpkcs11shim.so.*

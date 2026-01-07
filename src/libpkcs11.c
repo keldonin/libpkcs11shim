@@ -101,7 +101,7 @@ sc_pkcs11_module_t * C_LoadModule(const char *libname, pkcs11_function_list_t_pt
 
     if (c_get_interface) {
 	CK_INTERFACE_PTR interface_ptr = NULL;
-	CK_UTF8CHAR * interface_name = "PKCS 11";	// we only support this one.
+	CK_UTF8CHAR * interface_name = (CK_UTF8CHAR *)"PKCS 11";	// we only support this one.
 
         //fprintf(stderr, "C_LoadModule: Using C_GetInterface to load module\n");
 

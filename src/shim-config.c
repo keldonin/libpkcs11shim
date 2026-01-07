@@ -338,6 +338,11 @@ void shim_config_logfile_prolog(bool firsttime)
 	    "\n\n"
 	    "************************* PKCS#11 shim library *****************************\n"
 	    "* - version %s%*s*\n"
+#if defined(EXPOSE_PKCS11_V2_ONLY)
+	    "* - PKCS#11 v2.x interface only                                            *\n"
+#else
+	    "* - PKCS#11 v3.x and v2.x interfaces                                       *\n"
+#endif
 #if defined(HAVE_OPENSSL)
 	    "* - with OpenSSL support                                                   *\n"
 #else
